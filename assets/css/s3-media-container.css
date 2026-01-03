@@ -1,0 +1,30 @@
+/* Media Container Styling for WooCommerce */
+.wcs3-media-container {
+    margin: 0;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wcs3-media-container .description {
+    color: #50575e;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .wcs3-media-container {
+        padding: 1rem;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .wcs3-media-container .media-title {
+        font-size: 1.125rem;
+        margin-bottom: 1rem;
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "mohammadr3z/storage-for-woo-via-s3-compatible",
+    "description": "Enable secure cloud storage and delivery of your WooCommerce digital products through S3-Compatible services.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "mohammadr3z"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "autoload": {
+        "classmap": [
+            "includes/"
+        ]
+    }
+}

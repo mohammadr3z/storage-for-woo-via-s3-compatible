@@ -1,0 +1,427 @@
+/* Modern S3 Library File Table Styles for WooCommerce - Matching EDD Style */
+body#media-upload {
+    padding: 20px;
+    background: #f5f5f5;
+}
+
+/* Header Row with Upload Button */
+.wcs3-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.wcs3-header-row .media-title {
+    margin: 0;
+    font-size: 20px;
+    color: #1d2327;
+}
+
+.wcs3-header-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Upload button - Orange style to match EDD */
+#wcs3-toggle-upload {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border: none !important;
+    border-radius: 6px;
+    background-color: #d97706 !important;
+    color: #fff !important;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+#wcs3-toggle-upload:hover,
+#wcs3-toggle-upload:focus {
+    background-color: #b45309 !important;
+    color: #fff !important;
+    box-shadow: none;
+    outline: none;
+}
+
+/* New Breadcrumb Navigation */
+.wcs3-breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.wcs3-nav-group {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    overflow: hidden;
+    margin-right: 15px;
+}
+
+html[dir="rtl"] .wcs3-nav-group {
+    margin-right: 0;
+    margin-left: 15px;
+}
+
+.wcs3-search-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.wcs3-search-inline .wcs3-search-input {
+    width: 200px !important;
+    padding: 1px 10px !important;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin: 0 !important;
+}
+
+/* Back Button - Blue */
+.wcs3-nav-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background-color: #2271b1;
+    color: #fff;
+    text-decoration: none;
+    margin-right: 15px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+html[dir="rtl"] .wcs3-nav-back,
+body.rtl .wcs3-nav-back {
+    margin-right: 0;
+    margin-left: 15px;
+}
+
+.wcs3-nav-back:hover {
+    background-color: #135e96;
+    color: #fff;
+}
+
+.wcs3-nav-back:focus {
+    background-color: #135e96;
+    color: #fff;
+    box-shadow: none;
+    outline: none;
+}
+
+.wcs3-nav-back.disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+}
+
+.wcs3-nav-back .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+}
+
+.wcs3-breadcrumbs {
+    font-size: 14px;
+    color: #646970;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+.wcs3-breadcrumbs a {
+    color: #2271b1;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.wcs3-breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.wcs3-breadcrumbs .sep {
+    margin: 0 8px;
+    color: #a7aaad;
+    font-weight: 300;
+}
+
+.wcs3-breadcrumbs .current {
+    color: #1d2327;
+    font-weight: 600;
+}
+
+/* RTL Support for Breadcrumb */
+html[dir="rtl"] .wcs3-nav-back .dashicons,
+body.rtl .wcs3-nav-back .dashicons {
+    transform: scaleX(-1);
+}
+
+html[dir="rtl"] .wcs3-breadcrumbs,
+body.rtl .wcs3-breadcrumbs {
+    direction: rtl !important;
+    text-align: right !important;
+    unicode-bidi: embed;
+}
+
+/* Ensure Links and Spans follow direction */
+html[dir="rtl"] .wcs3-breadcrumbs a,
+html[dir="rtl"] .wcs3-breadcrumbs span,
+body.rtl .wcs3-breadcrumbs a,
+body.rtl .wcs3-breadcrumbs span {
+    display: inline-block;
+}
+
+.wcs3-files-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin: 20px 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.wcs3-files-table th {
+    background: #f8f9fa;
+    color: #1d2327;
+    padding: 16px;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e4e7;
+    white-space: nowrap;
+}
+
+.wcs3-files-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: middle;
+    transition: background-color 0.2s ease;
+}
+
+.wcs3-files-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wcs3-files-table tr:hover td {
+    background-color: #f8f9fa;
+}
+
+/* File Name - Blue */
+.wcs3-files-table .file-name {
+    font-weight: 500;
+    color: #2271b1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* RTL Support for File Name */
+html[dir="rtl"] .wcs3-files-table .file-name,
+body.rtl .wcs3-files-table .file-name,
+html[dir="rtl"] .wcs3-files-table td.column-size,
+body.rtl .wcs3-files-table td.column-size {
+    direction: ltr;
+}
+
+.wcs3-files-table .file-name,
+.wcs3-files-table td.column-size {
+    text-align: left;
+}
+
+html[dir="rtl"] .wcs3-files-table .file-name,
+body.rtl .wcs3-files-table .file-name,
+html[dir="rtl"] .wcs3-files-table td.column-size,
+body.rtl .wcs3-files-table td.column-size {
+    text-align: right;
+}
+
+/* File Display Container */
+.wcs3-file-display {
+    display: block;
+}
+
+.wcs3-file-display .file-name {
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.5;
+    display: block;
+    letter-spacing: 0.01em;
+}
+
+.wcs3-files-table .file-size,
+.wcs3-files-table .file-date {
+    color: #50575e;
+    font-size: 0.9em;
+}
+
+.button-small {
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    height: auto;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Folder row styling - EDD Orange Theme */
+.wcs3-folder-row {
+    background: #fffbeb;
+    position: relative;
+}
+
+.wcs3-folder-row:hover td {
+    background: #fef3c7;
+}
+
+.wcs3-folder-row .folder-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #92400e;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    position: relative;
+    z-index: 1;
+    padding: 4px 8px;
+    margin: -4px -8px;
+}
+
+.wcs3-folder-row .folder-link:hover {
+    color: #2271b1;
+    background: rgba(34, 113, 177, 0.08);
+}
+
+.wcs3-folder-row .folder-link .dashicons {
+    color: #d97706;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wcs3-folder-row .folder-link:hover .dashicons {
+    color: #2271b1;
+}
+
+.wcs3-folder-row .folder-link .file-name {
+    line-height: 1.4;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Notices */
+.wcs3-notice {
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 4px;
+}
+
+.wcs3-notice.warning {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.wcs3-notice.success {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+/* RTL Support for Notices */
+html[dir="rtl"] .wcs3-notice.warning,
+body.rtl .wcs3-notice.warning {
+    border-left: none !important;
+    border-right: 4px solid #ffc107;
+}
+
+html[dir="rtl"] .wcs3-notice.success,
+body.rtl .wcs3-notice.success {
+    border-left: none !important;
+    border-right: 4px solid #28a745;
+}
+
+.wcs3-notice h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.wcs3-notice p {
+    margin: 5px 0;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    body#media-upload {
+        padding: 15px;
+    }
+
+    .wcs3-breadcrumb-nav {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .wcs3-nav-group {
+        margin: 0;
+        width: 100%;
+    }
+
+    .wcs3-breadcrumbs {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .wcs3-search-inline {
+        width: 100%;
+    }
+
+    .wcs3-search-inline .wcs3-search-input {
+        width: 100% !important;
+        flex: 1;
+    }
+
+    .wcs3-files-table {
+        width: 100%;
+        margin: 15px 0;
+    }
+
+    .wcs3-files-table .column-size,
+    .wcs3-files-table .column-date {
+        display: none !important;
+    }
+
+    .wcs3-files-table.wp-list-table th.column-primary~th.column-actions,
+    .wcs3-files-table.wp-list-table tr:not(.inline-edit-row):not(.no-items) td.column-primary~td.column-actions {
+        display: table-cell !important;
+        padding: 8px !important;
+    }
+
+    .wcs3-breadcrumbs .sep {
+        margin: 0 2px;
+    }
+}

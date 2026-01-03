@@ -1,0 +1,199 @@
+/* Amazon S3 Upload Form Styles for WooCommerce */
+:root {
+    --wcs3-primary: #2271b1;
+    --wcs3-primary-hover: #135e96;
+    --wcs3-error: #dc3232;
+    --wcs3-success: #46b450;
+    --wcs3-warning: #f0b849;
+    --wcs3-text: #232F3E;
+    --wcs3-text-secondary: #50575e;
+    --wcs3-border: #dcdcde;
+    --wcs3-background: #f8f9fa;
+    --wcs3-card-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --wcs3-transition: all 0.2s ease;
+}
+
+/* Notice Styles */
+.wcs3-notice {
+    background: #fff;
+    border-left: 4px solid var(--wcs3-primary);
+    box-shadow: var(--wcs3-card-shadow);
+    margin: 1.25rem 0;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    transition: var(--wcs3-transition);
+}
+
+.wcs3-notice.warning {
+    border-left-color: var(--wcs3-warning);
+    background: #fffbf1;
+}
+
+.wcs3-notice.error {
+    border-left-color: var(--wcs3-error);
+    background: #fef7f7;
+}
+
+.wcs3-notice.success {
+    border-left-color: var(--wcs3-success);
+    background: #f7fef7;
+}
+
+/* RTL Support */
+html[dir="rtl"] .wcs3-notice,
+body.rtl .wcs3-notice {
+    border-left: none;
+    border-right: 4px solid var(--wcs3-primary);
+}
+
+html[dir="rtl"] .wcs3-notice.warning,
+body.rtl .wcs3-notice.warning {
+    border-right-color: var(--wcs3-warning);
+}
+
+html[dir="rtl"] .wcs3-notice.error,
+body.rtl .wcs3-notice.error {
+    border-right-color: var(--wcs3-error);
+}
+
+html[dir="rtl"] .wcs3-notice.success,
+body.rtl .wcs3-notice.success {
+    border-right-color: var(--wcs3-success);
+}
+
+.wcs3-notice h4 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    color: var(--wcs3-text);
+    font-weight: 600;
+}
+
+.wcs3-notice p {
+    margin: 0 0 1rem;
+    color: var(--wcs3-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.wcs3-notice p:last-child {
+    margin-bottom: 0;
+}
+
+.wcs3-notice .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wcs3-primary);
+    border-color: var(--wcs3-primary);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    height: auto;
+    line-height: 1.4;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    transition: var(--wcs3-transition);
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.wcs3-notice .button-primary:hover,
+.wcs3-notice .button-primary:focus {
+    background: var(--wcs3-primary-hover);
+    border-color: var(--wcs3-primary-hover);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Upload Form Styling */
+body#media-upload {
+    background: #f5f5f5;
+}
+
+.wcs3-upload-form {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wcs3-upload-form input[type="file"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--wcs3-border);
+    border-radius: 0.375rem;
+    background: var(--wcs3-background);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+    transition: var(--wcs3-transition);
+}
+
+.wcs3-upload-form input[type="file"]:focus {
+    outline: none;
+    border-color: var(--wcs3-primary);
+    box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.1);
+}
+
+.wcs3-upload-form .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wcs3-primary);
+    border-color: var(--wcs3-primary);
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    height: auto;
+    line-height: 1.4;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    transition: var(--wcs3-transition);
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.wcs3-upload-form .button-primary:hover,
+.wcs3-upload-form .button-primary:focus {
+    background: var(--wcs3-primary-hover);
+    border-color: var(--wcs3-primary-hover);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wcs3-upload-form .description {
+    color: var(--wcs3-text-secondary);
+    font-size: 0.8125rem;
+    margin: 0.5rem 0 1rem;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .wcs3-upload-form {
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 0.375rem;
+    }
+
+    .wcs3-notice {
+        padding: 0.875rem;
+        margin: 1rem 0;
+    }
+
+    .wcs3-upload-form .button-primary {
+        width: 100%;
+        justify-content: center;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+    }
+
+    .wcs3-upload-form input[type="file"] {
+        padding: 0.875rem;
+        font-size: 1rem;
+    }
+}

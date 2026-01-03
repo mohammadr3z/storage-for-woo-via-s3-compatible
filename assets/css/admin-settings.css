@@ -1,0 +1,110 @@
+/**
+ * Admin Settings Styles for Dropbox WooCommerce Integration
+ */
+
+/* Connected status indicator - Green */
+.wcdbx-connected-status {
+    color: #00a32a;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: #d4edda;
+    border-left: 4px solid #00a32a;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Warning status indicator - Yellow/Orange */
+.wcdbx-warning-status {
+    color: #856404;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: #fff3cd;
+    border-left: 4px solid #f0ad4e;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Notice styling */
+.wcdbx-notice {
+    padding: 10px 15px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    margin: 10px 0;
+    border-radius: 0 4px 4px 0;
+}
+
+/* Permission warning message */
+.wcdbx-permission-warning {
+    display: inline-block;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border-left: 4px solid #f0ad4e;
+    color: #856404;
+    font-size: 13px;
+    margin-top: 8px;
+    border-radius: 0 4px 4px 0;
+}
+
+/* RTL Support */
+.rtl .wcdbx-connected-status,
+.rtl .wcdbx-warning-status,
+.rtl .wcdbx-notice,
+.rtl .wcdbx-permission-warning {
+    border-left: none;
+    border-right: 4px solid;
+    border-radius: 4px 0 0 4px;
+}
+
+.rtl .wcdbx-connected-status {
+    border-right-color: #00a32a;
+}
+
+.rtl .wcdbx-warning-status,
+.rtl .wcdbx-permission-warning {
+    border-right-color: #f0ad4e;
+}
+
+.rtl .wcdbx-notice {
+    border-right-color: #ffc107;
+}
+
+/* Disabled input styling */
+.wcdbx-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Credential input fields */
+.wcdbx-credential {
+    font-family: monospace;
+}
+
+/* OAuth buttons */
+.wcdbx-oauth-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wcdbx-oauth-button .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+/* WooCommerce settings page styles */
+.woocommerce table.form-table th {
+    padding: 20px 10px 20px 0;
+}
+
+.woocommerce table.form-table td {
+    padding: 15px 10px;
+}
+
+.woocommerce table.form-table select {
+    min-width: 250px;
+}
