@@ -1,10 +1,10 @@
-=== Storage for WooCommerce via S3-Compatible ===
+=== Storage for Woo via S3-Compatible ===
 Contributors: mohammadr3z
 Tags: woocommerce, s3, amazon, digital downloads, cloud storage
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,11 +124,16 @@ Yes, developers can customize the allowed MIME types using the `wcs3_allowed_mim
 
 == Screenshots ==
 
-1. Admin panel user interface
-2. File selection from S3 storage section
-3. File upload to S3 storage interface
+1. Plugin Settings
+2. Browse button for link selection
+3. Library popup display
+4. Upload form display
 
 == Changelog ==
+
+= 1.0.1 =
+* Improved file browser to open directly in the folder of the existing file
+* Fixed issue with remembering last folder location
 
 = 1.0.0 =
 * Initial release

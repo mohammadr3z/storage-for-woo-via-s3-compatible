@@ -20,7 +20,6 @@ class WCS3_Media_Library
         $this->client = new WCS3_S3_Client();
 
         // Media library integration
-        // add_filter('media_upload_tabs', array($this, 'addS3Tabs'));
         add_action('media_upload_wcs3_lib', array($this, 'registerLibraryTab'));
         add_action('admin_head', array($this, 'setupAdminJS'));
 
@@ -77,7 +76,6 @@ class WCS3_Media_Library
      */
     public function renderLibraryTab()
     {
-        // media_upload_header(); // Removed per user request
         wp_enqueue_style('media');
         wp_enqueue_style('wcs3-media-library');
         wp_enqueue_style('wcs3-media-container');
@@ -168,6 +166,8 @@ class WCS3_Media_Library
 
                         <div class="wcs3-breadcrumbs">
                             <?php
+                            $bucket_name = $this->config->getBucket();
+
                             if (!empty($path)) {
                                 // Build breadcrumb navigation
                                 $path_parts = explode('/', trim($path, '/'));
@@ -177,7 +177,7 @@ class WCS3_Media_Library
                                 // Root link
                                 $root_url = remove_query_arg(array('path', 'wcs3_success', 'wcs3_filename', 'error'));
                                 $root_url = add_query_arg(array('_wpnonce' => wp_create_nonce('media-form')), $root_url);
-                                $breadcrumb_links[] = '<a href="' . esc_url($root_url) . '">' . esc_html__('Home', 'storage-for-woo-via-s3-compatible') . '</a>';
+                                $breadcrumb_links[] = '<a href="' . esc_url($root_url) . '">' . esc_html($bucket_name) . '</a>';
 
                                 // Build path links
                                 foreach ($path_parts as $index => $part) {
@@ -199,7 +199,7 @@ class WCS3_Media_Library
                                     'span' => array('class' => array())
                                 ));
                             } else {
-                                echo '<span class="current">' . esc_html__('Home', 'storage-for-woo-via-s3-compatible') . '</span>';
+                                echo '<span class="current">' . esc_html($bucket_name) . '</span>';
                             }
                             ?>
                         </div>
@@ -226,9 +226,9 @@ class WCS3_Media_Library
                 if ($errorMsg) {
                     $this->config->debug('Upload error: ' . $errorMsg);
                 ?>
-                    <div class="edd_errors wcs3-notice warning">
+                    <div class="wcs3-notice warning">
                         <h4><?php esc_html_e('Error', 'storage-for-woo-via-s3-compatible'); ?></h4>
-                        <p class="edd_error"><?php esc_html_e('An error occurred during the upload process. Please try again.', 'storage-for-woo-via-s3-compatible'); ?></p>
+                        <p><?php esc_html_e('An error occurred during the upload process. Please try again.', 'storage-for-woo-via-s3-compatible'); ?></p>
                     </div>
                 <?php
                 }
@@ -239,9 +239,9 @@ class WCS3_Media_Library
                     $lastSlashPos = strrpos($savedPathAndFilename, '/');
                     $savedFilename = $lastSlashPos !== false ? substr($savedPathAndFilename, $lastSlashPos + 1) : $savedPathAndFilename;
                 ?>
-                    <div class="edd_errors wcs3-notice success">
+                    <div class="wcs3-notice success">
                         <h4><?php esc_html_e('Upload Successful', 'storage-for-woo-via-s3-compatible'); ?></h4>
-                        <p class="edd_success">
+                        <p>
                             <?php
                             /* translators: %s: Uploaded file name */
                             printf(esc_html__('File %s uploaded successfully!', 'storage-for-woo-via-s3-compatible'), '<strong>' . esc_html($savedFilename) . '</strong>');
@@ -498,11 +498,15 @@ class WCS3_Media_Library
             .wcs3_file_button {
                 display: block !important;
                 clear: both !important;
-                float: left !important;
+                float: right !important;
                 margin-top: 5px !important;
                 background: #d97706 !important;
                 color: #fff !important;
                 border-color: #d97706 !important;
+            }
+
+            html[dir="rtl"] .wcs3_file_button {
+                float: left !important;
             }
 
             .wcs3_file_button:hover,
@@ -542,8 +546,32 @@ class WCS3_Media_Library
 
                                 console.log('WCS3: Opening modal', window.wcs3_current_name_input, window.wcs3_current_url_input);
 
+                                // Context-Aware: Open in the folder of the current file
+                                var currentUrl = window.wcs3_current_url_input.val();
+                                // Use dynamic prefix variable injected from PHP, fallback to default if undefined
+                                var prefix = (typeof wcs3_url_prefix !== 'undefined') ? wcs3_url_prefix : 'wc-s3cs://';
+                                var folderPath = '';
+
+                                if (currentUrl && currentUrl.indexOf(prefix) === 0) {
+                                    // Remove prefix
+                                    var path = currentUrl.substring(prefix.length);
+                                    // Remove filename, keep folder path
+                                    var lastSlash = path.lastIndexOf('/');
+                                    if (lastSlash !== -1) {
+                                        folderPath = path.substring(0, lastSlash);
+                                    }
+                                }
+
+                                var modalUrl = '<?php echo esc_js($s3_url); ?>';
+                                if (folderPath) {
+                                    modalUrl += '&path=' + encodeURIComponent(folderPath);
+                                    // Ensure nonce is included if not already part of s3_url
+                                    // $s3_url usually builds with admin_url('media-upload.php...'), so we append query args safely
+                                    modalUrl += '&_wpnonce=' + '<?php echo wp_create_nonce("media-form"); ?>';
+                                }
+
                                 // Open Custom Modal
-                                WCS3Modal.open('<?php echo esc_js($s3_url); ?>', '<?php echo esc_js(__('Select from S3', 'storage-for-woo-via-s3-compatible')); ?>');
+                                WCS3Modal.open(modalUrl, '<?php echo esc_js(__('S3 Library', 'storage-for-woo-via-s3-compatible')); ?>');
                             });
 
                             $chooseBtn.after($s3Btn);
