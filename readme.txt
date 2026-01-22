@@ -134,6 +134,7 @@ Yes, developers can customize the allowed MIME types using the `wcs3_allowed_mim
 = 1.0.1 =
 * Improved file browser to open directly in the folder of the existing file
 * Fixed issue with remembering last folder location
+* Use wp_enqueue commands: Replaced inline <style> and <script> in includes/class-media-library.php (admin media library)
 
 = 1.0.0 =
 * Initial release

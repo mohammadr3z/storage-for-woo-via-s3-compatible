@@ -1,0 +1,25 @@
+/**
+ * S3 Browse Button Styles
+ * Used in WooCommerce product downloadable files section
+ */
+
+.wcs3_file_button {
+    display: block !important;
+    clear: both !important;
+    float: right !important;
+    margin-top: 5px !important;
+    background: #d97706 !important;
+    color: #fff !important;
+    border-color: #d97706 !important;
+}
+
+html[dir="rtl"] .wcs3_file_button {
+    float: left !important;
+}
+
+.wcs3_file_button:hover,
+.wcs3_file_button:focus {
+    background: #b45309 !important;
+    color: #fff !important;
+    border-color: #b45309 !important;
+}
