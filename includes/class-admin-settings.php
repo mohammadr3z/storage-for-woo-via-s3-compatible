@@ -78,6 +78,13 @@ class WCS3_Admin_Settings
 
         <table class="form-table">
             <tr valign="top">
+                <th scope="row"><?php esc_html_e('Endpoint', 'storage-for-woo-via-s3-compatible'); ?></th>
+                <td>
+                    <input type="text" name="wcs3_endpoint" value="<?php echo esc_attr($this->config->getRawEndpoint()); ?>" class="regular-text" placeholder="https://" />
+                    <p class="description"><?php esc_html_e('Enter your S3 compatible endpoint URL (e.g. https://s3.example.com). The URL should start with https:// for proper functionality.', 'storage-for-woo-via-s3-compatible'); ?></p>
+                </td>
+            </tr>
+            <tr valign="top">
                 <th scope="row"><?php esc_html_e('Access Key', 'storage-for-woo-via-s3-compatible'); ?></th>
                 <td>
                     <input type="text" name="wcs3_access_key" value="<?php echo esc_attr($this->config->getAccessKey()); ?>" class="regular-text" />
@@ -89,13 +96,6 @@ class WCS3_Admin_Settings
                 <td>
                     <input type="password" name="wcs3_secret_key" value="<?php echo esc_attr($this->config->getSecretKey()); ?>" class="regular-text" />
                     <p class="description"><?php esc_html_e('Enter your S3 Secret Access Key.', 'storage-for-woo-via-s3-compatible'); ?></p>
-                </td>
-            </tr>
-            <tr valign="top">
-                <th scope="row"><?php esc_html_e('Endpoint', 'storage-for-woo-via-s3-compatible'); ?></th>
-                <td>
-                    <input type="text" name="wcs3_endpoint" value="<?php echo esc_attr($this->config->getRawEndpoint()); ?>" class="regular-text" placeholder="https://" />
-                    <p class="description"><?php esc_html_e('Enter your S3 compatible endpoint URL (e.g. https://s3.example.com). The URL should start with https:// for proper functionality.', 'storage-for-woo-via-s3-compatible'); ?></p>
                 </td>
             </tr>
             <tr valign="top">
