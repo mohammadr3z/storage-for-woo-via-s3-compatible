@@ -292,6 +292,7 @@ class WCS3_S3_Client
                 'X-Amz-Credential' => $accessKey . '/' . $shortDate . '/' . $region . '/s3/aws4_request',
                 'X-Amz-Date' => $date,
                 'X-Amz-Expires' => $expires,
+                'response-content-disposition' => 'attachment; filename="' . basename($path) . '"',
                 'X-Amz-SignedHeaders' => 'host'
             ];
 

@@ -69,6 +69,8 @@ class WCS3_S3_Uploader
 
         try {
             // Read file content securely
+            // Nonce verified at method start (line 35). File tmp_name is validated with is_uploaded_file().
+            // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tmp_name is a server-generated path, sanitization would break file access.
             $fileContent = '';
             if (
                 isset($_FILES['wcs3_file']['tmp_name']) &&
@@ -76,6 +78,7 @@ class WCS3_S3_Uploader
                 is_readable($_FILES['wcs3_file']['tmp_name'])
             ) {
                 $fileContent = file_get_contents($_FILES['wcs3_file']['tmp_name']);
+                // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
                 if ($fileContent === false) {
                     wp_die(esc_html__('Unable to read uploaded file.', 'storage-for-woo-via-s3-compatible'), esc_html__('Error', 'storage-for-woo-via-s3-compatible'), array('back_link' => true));
                 }
@@ -123,6 +126,9 @@ class WCS3_S3_Uploader
      */
     private function validateUpload()
     {
+        // Nonce verified in performFileUpload() before calling this method.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified in calling method performFileUpload().
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tmp_name is server-generated path; name is sanitized when used.
         if (
             !isset($_FILES['wcs3_file']) ||
             !isset($_FILES['wcs3_file']['name']) ||
@@ -161,6 +167,8 @@ class WCS3_S3_Uploader
             return false;
         }
 
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
+        // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         return true;
     }
 

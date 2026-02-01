@@ -25,9 +25,6 @@ class WCS3_S3_Downloader
         // Bypass file existence check for S3 files
         add_filter('woocommerce_downloadable_file_exists', array($this, 'bypassFileExistsCheck'), 999, 2);
 
-        // Allow S3 scheme in allowed protocols (if needed)
-        add_filter('allowed_http_origins', array($this, 'allowS3Origin'));
-
         // Whitelist custom protocol so wp_kses/esc_url doesn't strip it
         add_filter('kses_allowed_protocols', array($this, 'allowCustomProtocol'), 999);
     }
@@ -49,19 +46,6 @@ class WCS3_S3_Downloader
             return true;
         }
         return $exists;
-    }
-
-    /**
-     * Allow requests to S3 (optional, for some WC versions)
-     */
-    public function allowS3Origin($origins)
-    {
-        // Add common S3 endpoints
-        $origins[] = 'amazonaws.com';
-        $origins[] = 'digitaloceanspaces.com';
-        $origins[] = 'wasabisys.com';
-        $origins[] = 'backblazeb2.com';
-        return $origins;
     }
 
     /**
@@ -89,6 +73,7 @@ class WCS3_S3_Downloader
 
         // Don't generate temp links ONLY on product edit pages (to prevent saving temp links to DB)
         if (is_admin()) {
+            // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only context check for WooCommerce AJAX save, no data processing.
             $is_ajax_save = defined('DOING_AJAX') && DOING_AJAX && isset($_POST['action']) && $_POST['action'] === 'woocommerce_save_attributes';
 
             if ($is_ajax_save) {
@@ -129,7 +114,9 @@ class WCS3_S3_Downloader
                 // If this is a download request, redirect immediately
                 // We must check if the 'key' param matches the current $download_id to prevent
                 // redirecting the wrong file when multiple files exist for a product.
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- WooCommerce handles download verification, this is part of the download filter chain.
                 $requested_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- WooCommerce verifies download permissions before this filter.
                 if (isset($_GET['download_file']) && !defined('DOING_AJAX') && $requested_key === $download_id) {
                     header('Location: ' . $signedLink);
                     exit;

@@ -4,7 +4,7 @@ Tags: woocommerce, s3, amazon, digital downloads, cloud storage
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,25 +30,18 @@ Storage for WooCommerce via S3-Compatible is a powerful extension for WooCommerc
 2. Make sure you have WooCommerce plugin installed and activated.
 3. Run `composer install` in the plugin directory if installing from source (not needed for release versions).
 4. Activate the plugin through the 'Plugins' screen in WordPress.
-5. Navigate to WooCommerce > Settings > S3 Storage to configure the plugin.
+5. Navigate to WooCommerce > Settings > S3-Compatible to configure the plugin.
 
 == Configuration ==
 
-= Step 1: Get S3 Credentials =
-
-Obtain your Access Key and Secret Key from your S3-compatible storage provider.
-
-= Step 2: Configure in WordPress =
-
-1. Go to WooCommerce > Settings > S3 Storage
-2. Enter your credentials:
+1. Go to WooCommerce > Settings > S3-Compatible
+2. Enter your S3 credentials:
    * Access Key
    * Secret Key
    * Bucket Name
    * Endpoint URL (required for non-AWS services)
 3. Set the Link Expiration time (1-60 minutes)
-4. Save settings
-5. Test the connection by browsing your bucket
+4. Save the settings
 
 == Usage ==
 
@@ -130,6 +123,13 @@ Yes, developers can customize the allowed MIME types using the `wcs3_allowed_mim
 4. Upload form display
 
 == Changelog ==
+
+= 1.0.3 =
+* Improved WordPress coding standards compliance
+* Added proper PHPCS annotations for nonce verification and input sanitization
+
+= 1.0.2 =
+* Added force download for files - browser now downloads files instead of opening them inline
 
 = 1.0.1 =
 * Improved file browser to open directly in the folder of the existing file

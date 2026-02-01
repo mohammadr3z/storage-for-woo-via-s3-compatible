@@ -137,6 +137,7 @@ class WCS3_Admin_Settings
      */
     public function saveSettings()
     {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- WooCommerce verifies nonce before firing woocommerce_update_options_{tab} hook.
         // Save Access Key
         if (isset($_POST['wcs3_access_key'])) {
             update_option(WCS3_S3_Config::KEY_ACCESS_KEY, sanitize_text_field(wp_unslash($_POST['wcs3_access_key'])));
@@ -167,6 +168,7 @@ class WCS3_Admin_Settings
             if ($minutes > 60) $minutes = 60;
             update_option('wcs3_link_expiration_time', $minutes);
         }
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
     }
 
     /**
