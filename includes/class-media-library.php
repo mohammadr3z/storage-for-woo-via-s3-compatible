@@ -30,16 +30,7 @@ class WCS3_Media_Library
         add_action('admin_footer', array($this, 'addS3ButtonScript'));
     }
 
-    /**
-     * Add S3 tabs to media uploader
-     */
-    public function addS3Tabs($default_tabs)
-    {
-        if ($this->config->isConfigured()) {
-            $default_tabs['wcs3_lib'] = esc_html__('S3 Library', 'storage-for-woo-via-s3-compatible');
-        }
-        return $default_tabs;
-    }
+
 
     /**
      * Register S3 Library tab
@@ -397,7 +388,7 @@ class WCS3_Media_Library
             }
         }
 
-        $path = !empty($_GET['path']) ? sanitize_text_field(wp_unslash($_GET['path'])) : '';
+        $path = !empty($_GET['path']) ? trim(sanitize_text_field(wp_unslash($_GET['path']))) : '';
 
         // Prevent directory traversal
         if (strpos($path, '..') !== false) {
@@ -412,10 +403,13 @@ class WCS3_Media_Library
      */
     private function formatFileSize($size)
     {
-        if ($size == 0) return '0 B';
+        if ($size === 0) return '0 B';
 
         $units = array('B', 'KB', 'MB', 'GB', 'TB');
         $power = floor(log($size, 1024));
+        if ($power >= count($units)) {
+            $power = count($units) - 1;
+        }
 
         return round($size / pow(1024, $power), 2) . ' ' . $units[$power];
     }

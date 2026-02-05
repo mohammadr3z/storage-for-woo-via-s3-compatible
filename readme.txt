@@ -4,7 +4,7 @@ Tags: woocommerce, s3, amazon, digital downloads, cloud storage
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,7 +39,7 @@ Storage for WooCommerce via S3-Compatible is a powerful extension for WooCommerc
    * Access Key
    * Secret Key
    * Bucket Name
-   * Endpoint URL (required for non-AWS services)
+   * Endpoint URL (e.g., https://s3.example.com)
 3. Set the Link Expiration time (1-60 minutes)
 4. Save the settings
 
@@ -124,8 +124,15 @@ Yes, developers can customize the allowed MIME types using the `wcs3_allowed_mim
 
 == Changelog ==
 
-= 1.0.3 =
+= 1.0.5 =
+* Improved: UI styles and enhanced layout consistency for better harmony.
+* Improved: Comprehensive code improvements and stability optimizations.
+* Added: Skeleton loader with shimmer animation for better UX while loading S3 browser modal.
+
+= 1.0.4 =
 * Improved WordPress coding standards compliance
+
+= 1.0.3 =
 * Added proper PHPCS annotations for nonce verification and input sanitization
 
 = 1.0.2 =

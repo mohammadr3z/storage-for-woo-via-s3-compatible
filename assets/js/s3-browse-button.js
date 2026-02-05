@@ -3,16 +3,16 @@
  * Adds S3 browse buttons to WooCommerce downloadable files section
  */
 jQuery(function ($) {
-    console.log('WCS3: Script loaded');
+
 
     // Add S3 button next to each "Choose file" button
     function addS3Buttons() {
-        console.log('WCS3: addS3Buttons called');
+
 
         // Target the upload_file_button class directly
         $('.upload_file_button').each(function () {
             var $chooseBtn = $(this);
-            console.log('WCS3: Found button', $chooseBtn);
+
 
             // Check if S3 button already exists
             if ($chooseBtn.siblings('.wcs3_file_button').length === 0 &&
@@ -28,7 +28,7 @@ jQuery(function ($) {
                     window.wcs3_current_name_input = $row.find('input[name="_wc_file_names[]"]');
                     window.wcs3_current_url_input = $row.find('input[name="_wc_file_urls[]"]');
 
-                    console.log('WCS3: Opening modal', window.wcs3_current_name_input, window.wcs3_current_url_input);
+
 
                     // Context-Aware: Open in the folder of the current file
                     var currentUrl = window.wcs3_current_url_input.val();
@@ -57,7 +57,7 @@ jQuery(function ($) {
                 });
 
                 $chooseBtn.after($s3Btn);
-                console.log('WCS3: Button added');
+
             }
         });
     }
@@ -93,7 +93,7 @@ jQuery(function ($) {
                 childList: true,
                 subtree: true
             });
-            console.log('WCS3: Observing', target);
+
         }
     });
 });

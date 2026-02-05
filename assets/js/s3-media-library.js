@@ -9,7 +9,7 @@ jQuery(function ($) {
         file_selected_error: 'Error selecting file. Please try again.'
     };
 
-    console.log('WCS3 Media Library: Loaded with prefix', url_prefix);
+
 
     // Helper to construct correct URI
     function getS3URI(link) {
@@ -35,13 +35,13 @@ jQuery(function ($) {
         var fileurl = getS3URI(link);
         var success = false;
 
-        console.log('WCS3: Selecting file', filename, fileurl);
+
 
         // ... rest of the handler logic
 
         // Method 1: Use stored references from S3 button click
         if (parent.window && parent.window.wcs3_current_name_input && parent.window.wcs3_current_url_input) {
-            console.log('WCS3: Using stored references');
+
             parent.window.wcs3_current_name_input.val(filename);
             parent.window.wcs3_current_url_input.val(fileurl);
             success = true;
@@ -56,7 +56,7 @@ jQuery(function ($) {
             var $filenameInput = $parent.find('input[name="_wc_file_names[]"]').last();
             var $fileurlInput = $parent.find('input[name="_wc_file_urls[]"]').last();
 
-            console.log('WCS3: Method 2 - Found', $filenameInput.length, $fileurlInput.length);
+
 
             if ($filenameInput.length && $fileurlInput.length) {
                 $filenameInput.val(filename);
@@ -81,7 +81,7 @@ jQuery(function ($) {
         var link = $(this).data('wcs3-path');
         var fileurl = getS3URI(link);
 
-        console.log('WCS3: Upload link clicked', filename, fileurl);
+
 
         if (parent.window && parent.window.wcs3_current_name_input && parent.window.wcs3_current_url_input) {
             parent.window.wcs3_current_name_input.val(filename);
