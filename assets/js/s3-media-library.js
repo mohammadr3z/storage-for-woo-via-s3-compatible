@@ -1,139 +1,176 @@
 /**
- * S3-Compatible Media Library JavaScript for WooCommerce
+ * S3 Media Library JavaScript (AJAX Version) for WooCommerce
  */
-jQuery(function ($) {
-    // Fallback for undefined variables
-    var url_prefix = (typeof wcs3_url_prefix !== 'undefined') ? wcs3_url_prefix : 'wc-s3cs://';
-    var i18n = (typeof wcs3_i18n !== 'undefined') ? wcs3_i18n : {
-        file_selected_success: 'File selected successfully!',
-        file_selected_error: 'Error selecting file. Please try again.'
-    };
+window.WCS3MediaLibrary = (function ($) {
+    var $container;
 
+    // Initialize events using delegation
+    function initEvents() {
+        $container = $('#wcs3-modal-container');
 
+        // Folder Navigation
+        $(document).on('click', '.wcs3-folder-row a, .wcs3-breadcrumb-nav a', function (e) {
+            e.preventDefault();
+            var path = $(this).data('path');
+            if (path !== undefined) {
+                loadLibrary(path);
+            }
+        });
 
-    // Helper to construct correct URI
-    function getS3URI(link) {
-        if (!link) return '';
-        if (link.indexOf('wc-s3cs://') === 0) {
-            return link;
-        }
-        // If it starts with http, it's likely a mistake or direct link, but we want wc-s3cs://path
-        if (link.indexOf('http') === 0) {
-            // Should ideally extract path, but for now fallback to prefix + link
-            return link;
-        }
+        // File Selection
+        $(document).on('click', '.save-wcs3-file', function (e) {
+            e.preventDefault();
+            var filename = $(this).data('wcs3-filename');
+            // Ensure we use the prefix from correct variable
+            var fileurl = wcs3_url_prefix + $(this).data('wcs3-link');
+            selectFile(filename, fileurl);
+        });
 
-        // Ensure path starts with / if needed, or handle prefix correctly
-        // wcs3_url_prefix is 'wc-s3cs://'
-        return url_prefix + link.replace(/^\//, '');
+        // Search
+        $(document).on('input search', '#wcs3-file-search', function () {
+            var searchTerm = $(this).val().toLowerCase();
+            var $fileRows = $('.wcs3-files-table tbody tr');
+            var visibleCount = 0;
+
+            $fileRows.each(function () {
+                var $row = $(this);
+
+                var fileName = $row.find('.file-name').text().toLowerCase();
+
+                if (fileName.indexOf(searchTerm) !== -1) {
+                    $row.show();
+                    visibleCount++;
+                } else {
+                    $row.hide();
+                }
+            });
+
+            // Show/hide "no results" message
+            var $noResults = $('.wcs3-no-search-results');
+            if (visibleCount === 0 && searchTerm.length > 0) {
+                if ($noResults.length === 0) {
+                    $('.wcs3-files-table').after('<div class="wcs3-no-search-results" style="padding: 20px; text-align: center; color: #666; font-style: italic;">No files found matching your search.</div>');
+                } else {
+                    $noResults.show();
+                }
+            } else {
+                $noResults.hide();
+            }
+        });
+
+        // Keyboard shortcut for search
+        $(document).on('keydown', function (e) {
+            if ($('#wcs3-modal-overlay').is(':visible') && (e.ctrlKey || e.metaKey) && e.keyCode === 70) {
+                e.preventDefault();
+                $('#wcs3-file-search').focus();
+            }
+        });
+
+        // Toggle upload form
+        $(document).on('click', '#wcs3-toggle-upload', function () {
+            $('#wcs3-upload-section').slideToggle(200);
+        });
     }
 
-    // File selection handler
-    $('.save-wcs3-file').click(function () {
-        var filename = $(this).data('wcs3-filename');
-        var link = $(this).data('wcs3-link');
-        var fileurl = getS3URI(link);
-        var success = false;
-
-
-
-        // ... rest of the handler logic
-
-        // Method 1: Use stored references from S3 button click
-        if (parent.window && parent.window.wcs3_current_name_input && parent.window.wcs3_current_url_input) {
-
-            parent.window.wcs3_current_name_input.val(filename);
-            parent.window.wcs3_current_url_input.val(fileurl);
-            success = true;
-            if (parent.WCS3Modal) {
-                parent.WCS3Modal.close();
-            }
+    // Helper to show notice
+    function showError(message) {
+        $('.wcs3-notice').remove();
+        var errorHtml = '<div class="wcs3-notice warning"><p>' + message + '</p></div>';
+        if ($('.wcs3-files-table').length) {
+            $('.wcs3-files-table').before(errorHtml);
+        } else {
+            $('#wcs3-modal-container').prepend(errorHtml);
         }
+    }
 
-        // Method 2: Try WooCommerce file table inputs in parent
-        if (!success && parent.window && parent.window !== window) {
-            var $parent = $(parent.document);
-            var $filenameInput = $parent.find('input[name="_wc_file_names[]"]').last();
-            var $fileurlInput = $parent.find('input[name="_wc_file_urls[]"]').last();
+    // Load library content via AJAX
+    function loadLibrary(path) {
+        $container = $('#wcs3-modal-container'); // Refresh ref
 
-
-
-            if ($filenameInput.length && $fileurlInput.length) {
-                $filenameInput.val(filename);
-                $fileurlInput.val(fileurl);
-                success = true;
-                if (parent.WCS3Modal) {
-                    parent.WCS3Modal.close();
+        if (path && typeof path === 'string' && path.indexOf('?') !== -1) {
+            try {
+                var urlObj = new URL(path, window.location.origin);
+                var params = new URLSearchParams(urlObj.search);
+                if (params.has('path')) {
+                    path = decodeURIComponent(params.get('path'));
+                } else {
+                    path = ''; // Default to root
+                }
+            } catch (e) {
+                if (path.indexOf('path=') !== -1) {
+                    var match = path.match(/path=([^&]*)/);
+                    if (match) {
+                        path = decodeURIComponent(match[1]);
+                    }
+                } else {
+                    path = '';
                 }
             }
         }
 
-        if (!success) {
-            alert(i18n.file_selected_error);
-        }
+        // Check if container is visible (navigation mode)
+        if ($container.is(':visible')) {
+            // Remove notices
+            $container.find('.wcs3-notice, .wcs3-no-search-results').remove();
 
-        return false;
-    });
-
-    // Handler for upload success link
-    $('#wcs3_save_link').click(function () {
-        var filename = $(this).data('wcs3-fn');
-        var link = $(this).data('wcs3-path');
-        var fileurl = getS3URI(link);
-
-
-
-        if (parent.window && parent.window.wcs3_current_name_input && parent.window.wcs3_current_url_input) {
-            parent.window.wcs3_current_name_input.val(filename);
-            parent.window.wcs3_current_url_input.val(fileurl);
-            if (parent.WCS3Modal) {
-                parent.WCS3Modal.close();
+            // If table exists, just replace tbody content with skeleton
+            var $table = $container.find('.wcs3-files-table');
+            if ($table.length && window.WCS3Modal) {
+                $table.addClass('wcs3-skeleton-table');
+                $table.find('tbody').html(WCS3Modal.getSkeletonRows());
             }
         }
-        return false;
-    });
 
-    // Search functionality for S3 files
-    $('#wcs3-file-search').on('input search', function () {
-        var searchTerm = $(this).val().toLowerCase();
-        var $fileRows = $('.wcs3-files-table tbody tr');
-        var visibleCount = 0;
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'wcs3_get_library',
+                path: path,
+                _wpnonce: wcs3_browse_button.nonce
+            },
+            success: function (response) {
+                if (response.success) {
+                    $container.html(response.data.html);
+                    // Update upload path hidden input
+                    $('input[name="wcs3_path"]').val(path);
 
-        $fileRows.each(function () {
-            var $row = $(this);
-            var fileName = $row.find('.file-name').text().toLowerCase();
-
-            if (fileName.indexOf(searchTerm) !== -1) {
-                $row.show();
-                visibleCount++;
-            } else {
-                $row.hide();
+                    // Notify modal to hide skeleton if it was initial load
+                    $(document).trigger('wcs3_content_loaded');
+                } else {
+                    showError('Error: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function () {
+                showError('Ajax connection error');
             }
         });
+    }
 
-        // Show/hide "no results" message
-        var $noResults = $('.wcs3-no-search-results');
-        if (visibleCount === 0 && searchTerm.length > 0) {
-            if ($noResults.length === 0) {
-                $('.wcs3-files-table').after('<div class="wcs3-no-search-results" style="padding: 20px; text-align: center; color: #666; font-style: italic;">No files found matching your search.</div>');
-            } else {
-                $noResults.show();
+    function selectFile(filename, fileurl) {
+        if (window.wcs3_current_name_input && window.wcs3_current_url_input) {
+            $(window.wcs3_current_name_input).val(filename);
+            $(window.wcs3_current_url_input).val(fileurl);
+
+            // Close modal
+            if (window.WCS3Modal) {
+                window.WCS3Modal.close();
             }
         } else {
-            $noResults.hide();
+            alert(wcs3_i18n.file_selected_error);
         }
+    }
+
+    // Auto-init on script load
+    $(document).ready(function () {
+        initEvents();
     });
 
-    // Keyboard shortcut for search
-    $(document).keydown(function (e) {
-        if ((e.ctrlKey || e.metaKey) && e.keyCode === 70) {
-            e.preventDefault();
-            $('#wcs3-file-search').focus();
+    return {
+        load: loadLibrary,
+        reload: function () {
+            loadLibrary('');
         }
-    });
+    };
 
-    // Toggle upload form
-    $('#wcs3-toggle-upload').click(function () {
-        $('#wcs3-upload-section').slideToggle(200);
-    });
-});
+})(jQuery);

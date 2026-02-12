@@ -4,7 +4,7 @@ Tags: woocommerce, s3, amazon, digital downloads, cloud storage
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,6 +123,14 @@ Yes, developers can customize the allowed MIME types using the `wcs3_allowed_mim
 4. Upload form display
 
 == Changelog ==
+
+= 1.1.0 =
+* Major Refactor: Replaced legacy iframe browser with modern AJAX implementation for improved performance.
+* Fixed: Critical issue where S3 uploads were considered successful despite 4xx/5xx HTTP errors.
+* Fixed: Signature mismatch in download presigned URLs for files with special characters or spaces.
+* Added: Strict pre-upload file validation (hash, size, and stream) for enhanced reliability.
+* Security: Sanitized `response-content-disposition` header in download links to prevent header injection.
+
 
 = 1.0.5 =
 * Improved: UI styles and enhanced layout consistency for better harmony.

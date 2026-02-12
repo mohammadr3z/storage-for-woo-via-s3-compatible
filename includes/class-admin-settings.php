@@ -80,21 +80,21 @@ class WCS3_Admin_Settings
             <tr valign="top">
                 <th scope="row"><?php esc_html_e('Endpoint', 'storage-for-woo-via-s3-compatible'); ?></th>
                 <td>
-                    <input type="text" name="wcs3_endpoint" value="<?php echo esc_attr($this->config->getRawEndpoint()); ?>" class="regular-text" placeholder="https://" />
+                    <input type="text" name="wcs3_endpoint" value="<?php echo esc_attr($this->config->getRawEndpoint()); ?>" class="regular-text wcs3-credential" placeholder="https://" />
                     <p class="description"><?php esc_html_e('Enter your S3 compatible endpoint URL (e.g. https://s3.example.com). The URL should start with https:// for proper functionality.', 'storage-for-woo-via-s3-compatible'); ?></p>
                 </td>
             </tr>
             <tr valign="top">
                 <th scope="row"><?php esc_html_e('Access Key', 'storage-for-woo-via-s3-compatible'); ?></th>
                 <td>
-                    <input type="text" name="wcs3_access_key" value="<?php echo esc_attr($this->config->getAccessKey()); ?>" class="regular-text" />
+                    <input type="text" name="wcs3_access_key" value="<?php echo esc_attr($this->config->getAccessKey()); ?>" class="regular-text wcs3-credential" />
                     <p class="description"><?php esc_html_e('Enter your S3 Access Key ID.', 'storage-for-woo-via-s3-compatible'); ?></p>
                 </td>
             </tr>
             <tr valign="top">
                 <th scope="row"><?php esc_html_e('Secret Key', 'storage-for-woo-via-s3-compatible'); ?></th>
                 <td>
-                    <input type="password" name="wcs3_secret_key" value="<?php echo esc_attr($this->config->getSecretKey()); ?>" class="regular-text" />
+                    <input type="password" name="wcs3_secret_key" value="<?php echo esc_attr($this->config->getSecretKey()); ?>" class="regular-text wcs3-credential" />
                     <p class="description"><?php esc_html_e('Enter your S3 Secret Access Key.', 'storage-for-woo-via-s3-compatible'); ?></p>
                 </td>
             </tr>
@@ -122,11 +122,12 @@ class WCS3_Admin_Settings
                     <p class="description"><?php esc_html_e('The duration (in minutes) that the signed download link remains valid (Default: 5).', 'storage-for-woo-via-s3-compatible'); ?></p>
                 </td>
             </tr>
-            <td>
-                <?php if (!$is_connected): ?>
-                    <span class="wcs3-notice"><?php esc_html_e('Please enter your S3 credentials and bucket details.', 'storage-for-woo-via-s3-compatible'); ?></span>
-                <?php endif; ?>
-            </td>
+            <tr valign="top">
+                <td colspan="2">
+                    <?php if (!$is_connected): ?>
+                        <span class="wcs3-notice"><?php esc_html_e('Please enter your S3 credentials and bucket details.', 'storage-for-woo-via-s3-compatible'); ?></span>
+                    <?php endif; ?>
+                </td>
             </tr>
         </table>
 <?php
@@ -166,7 +167,7 @@ class WCS3_Admin_Settings
             $minutes = (int) $_POST['wcs3_link_expiration_time'];
             if ($minutes < 1) $minutes = 5;
             if ($minutes > 60) $minutes = 60;
-            update_option('wcs3_link_expiration_time', $minutes);
+            update_option(WCS3_S3_Config::KEY_LINK_EXPIRATION_TIME, $minutes);
         }
         // phpcs:enable WordPress.Security.NonceVerification.Missing
     }
@@ -201,9 +202,8 @@ class WCS3_Admin_Settings
         wp_register_style('wcs3-admin-settings', WCS3_PLUGIN_URL . 'assets/css/admin-settings.css', array(), WCS3_VERSION);
         wp_enqueue_style('wcs3-admin-settings');
 
-        // Reuse standard JS if needed, or create specific
-        // wp_register_script('wcs3-admin-settings', WCS3_PLUGIN_URL . 'assets/js/admin-settings.js', array('jquery'), WCS3_VERSION, true);
-        // wp_enqueue_script('wcs3-admin-settings');
+        wp_register_script('wcs3-admin-settings', WCS3_PLUGIN_URL . 'assets/js/admin-settings.js', array('jquery'), WCS3_VERSION, true);
+        wp_enqueue_script('wcs3-admin-settings');
     }
 
     /**

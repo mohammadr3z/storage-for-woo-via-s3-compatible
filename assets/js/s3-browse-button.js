@@ -1,18 +1,15 @@
 /**
  * S3 Browse Button Script
- * Adds S3 browse buttons to WooCommerce downloadable files section
+ * Handles S3 browse button click events in WooCommerce downloadable files section (AJAX Version)
  */
 jQuery(function ($) {
-
 
     // Add S3 button next to each "Choose file" button
     function addS3Buttons() {
 
-
         // Target the upload_file_button class directly
         $('.upload_file_button').each(function () {
             var $chooseBtn = $(this);
-
 
             // Check if S3 button already exists
             if ($chooseBtn.siblings('.wcs3_file_button').length === 0 &&
@@ -25,20 +22,18 @@ jQuery(function ($) {
                     e.preventDefault();
 
                     // Store references to the input fields for this row
+                    window.wcs3_current_row = $row;
                     window.wcs3_current_name_input = $row.find('input[name="_wc_file_names[]"]');
                     window.wcs3_current_url_input = $row.find('input[name="_wc_file_urls[]"]');
 
-
-
-                    // Context-Aware: Open in the folder of the current file
                     var currentUrl = window.wcs3_current_url_input.val();
-                    // Use dynamic prefix variable injected from PHP, fallback to default if undefined
-                    var prefix = (typeof wcs3_url_prefix !== 'undefined') ? wcs3_url_prefix : 'wc-s3cs://';
                     var folderPath = '';
+                    // Using wcs3_browse_button object which should be localized
+                    var urlPrefix = wcs3_browse_button.url_prefix;
 
-                    if (currentUrl && currentUrl.indexOf(prefix) === 0) {
+                    if (currentUrl && currentUrl.indexOf(urlPrefix) === 0) {
                         // Remove prefix
-                        var path = currentUrl.substring(prefix.length);
+                        var path = currentUrl.substring(urlPrefix.length);
                         // Remove filename, keep folder path
                         var lastSlash = path.lastIndexOf('/');
                         if (lastSlash !== -1) {
@@ -46,14 +41,7 @@ jQuery(function ($) {
                         }
                     }
 
-                    var modalUrl = wcs3_browse_button.modal_url;
-                    if (folderPath) {
-                        modalUrl += '&path=' + encodeURIComponent(folderPath);
-                        modalUrl += '&_wpnonce=' + wcs3_browse_button.nonce;
-                    }
-
-                    // Open Custom Modal
-                    WCS3Modal.open(modalUrl, wcs3_browse_button.modal_title);
+                    WCS3Modal.open(folderPath, wcs3_browse_button.modal_title);
                 });
 
                 $chooseBtn.after($s3Btn);

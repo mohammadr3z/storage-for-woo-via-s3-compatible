@@ -292,14 +292,22 @@ class WCS3_S3_Client
                 'X-Amz-Credential' => $accessKey . '/' . $shortDate . '/' . $region . '/s3/aws4_request',
                 'X-Amz-Date' => $date,
                 'X-Amz-Expires' => $expires,
-                'response-content-disposition' => 'attachment; filename="' . basename($path) . '"',
+                'response-content-disposition' => 'attachment; filename="' . str_replace(array('"', "\r", "\n"), '', basename($path)) . '"',
                 'X-Amz-SignedHeaders' => 'host'
             ];
 
             // Canonical Request
-            $canonicalUri = rawurlencode($uri);
-            $canonicalUri = str_replace('%2F', '/', $canonicalUri);
-            $canonicalUri = str_replace('%7E', '~', $canonicalUri);
+            // Encode object key segments for correct URI and Canonical URI
+            $key_parts = explode('/', $path);
+            $encoded_key_parts = array_map('rawurlencode', $key_parts);
+            // Re-implode with /
+            $encoded_object_key = implode('/', $encoded_key_parts);
+
+            // Override URI with encoded version
+            $uri = '/' . $bucket . '/' . $encoded_object_key;
+
+            // Use the already encoded URI for canonical URI to avoid double encoding or mismatches
+            $canonicalUri = $uri;
 
             ksort($query_params);
             $canonicalQueryString = http_build_query($query_params);
@@ -345,7 +353,14 @@ class WCS3_S3_Client
      * @param string $content File content
      * @return array|false File metadata or false on failure
      */
-    public function uploadFile($path, $content)
+    /**
+     * Upload a file to S3
+     * 
+     * @param string $path Destination key in S3
+     * @param string $filePath Local file path
+     * @return array|false File metadata or false on failure
+     */
+    public function uploadFile($path, $filePath)
     {
         $client = $this->getS3Client();
         $bucket = $this->config->getBucket();
@@ -354,13 +369,12 @@ class WCS3_S3_Client
             return false;
         }
 
-        try {
-            // Reusing logic from previous implementation which matches EDD structure, 
-            // but for consistency we could extract makeRequestWithV4Auth logic.
-            // However, upload uses PUT and has specific payload.
-            // EDD Uploader uses explicit lines too.
-            // We stick to what we had as it was correct V4 PUT.
+        if (!file_exists($filePath) || !is_readable($filePath)) {
+            $this->config->debug('Upload file not found or unreadable: ' . $filePath);
+            return false;
+        }
 
+        try {
             $path = ltrim($path, '/');
             $endpoint = $this->config->getEndpoint();
             $accessKey = $this->config->getAccessKey();
@@ -371,21 +385,42 @@ class WCS3_S3_Client
             $shortDate = gmdate('Ymd');
             $service = 's3';
 
-            // Content Hash
-            $contentHash = hash('sha256', $content);
+            // Content Hash - use hash_file for memory efficiency
+            $contentHash = hash_file('sha256', $filePath);
+            if ($contentHash === false) {
+                throw new Exception(esc_html__('Failed to generate file hash.', 'storage-for-woo-via-s3-compatible'));
+            }
+
+            // Determine Content Type
             $contentType = 'application/octet-stream';
-            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-            $mimes = [
-                'jpg' => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'png' => 'image/png',
-                'gif' => 'image/gif',
-                'pdf' => 'application/pdf',
-                'zip' => 'application/zip',
-                'txt' => 'text/plain'
-            ];
-            if (isset($mimes[$ext])) {
-                $contentType = $mimes[$ext];
+            if (function_exists('mime_content_type')) {
+                $mime = mime_content_type($filePath);
+                if ($mime) {
+                    $contentType = $mime;
+                }
+            }
+
+            // Fallback / Override based on extension if octet-stream
+            if ($contentType === 'application/octet-stream') {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $mimes = [
+                    'jpg' => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png' => 'image/png',
+                    'gif' => 'image/gif',
+                    'pdf' => 'application/pdf',
+                    'zip' => 'application/zip',
+                    'txt' => 'text/plain',
+                    'css' => 'text/css',
+                    'js' => 'application/javascript',
+                    'json' => 'application/json',
+                    'xml' => 'application/xml',
+                    'mp3' => 'audio/mpeg',
+                    'mp4' => 'video/mp4'
+                ];
+                if (isset($mimes[$ext])) {
+                    $contentType = $mimes[$ext];
+                }
             }
 
             // Encode filename for URI
@@ -397,7 +432,12 @@ class WCS3_S3_Client
             $canonicalUri = "/$bucket/$encodedPath";
             $host = wp_parse_url($endpoint, PHP_URL_HOST);
 
-            $canonicalHeaders = "content-length:" . strlen($content) . "\ncontent-type:$contentType\nhost:$host\nx-amz-content-sha256:$contentHash\nx-amz-date:$date\n";
+            $fileSize = filesize($filePath);
+            if ($fileSize === false) {
+                throw new Exception(esc_html__('Failed to get file size.', 'storage-for-woo-via-s3-compatible'));
+            }
+
+            $canonicalHeaders = "content-length:$fileSize\ncontent-type:$contentType\nhost:$host\nx-amz-content-sha256:$contentHash\nx-amz-date:$date\n";
             $signedHeaders = 'content-length;content-type;host;x-amz-content-sha256;x-amz-date';
 
             $canonicalRequest = "$method\n$canonicalUri\n\n$canonicalHeaders\n$signedHeaders\n$contentHash";
@@ -417,24 +457,47 @@ class WCS3_S3_Client
 
             $requestUrl = rtrim($endpoint, '/') . "/$bucket/$encodedPath";
 
-            $client->request('PUT', $requestUrl, [
+            // Open stream
+            $stream = fopen($filePath, 'r');
+            if ($stream === false) {
+                throw new Exception(esc_html__('Failed to open file stream.', 'storage-for-woo-via-s3-compatible'));
+            }
+
+            $response = $client->request('PUT', $requestUrl, [
                 'headers' => [
                     'Content-Type' => $contentType,
-                    'Content-Length' => strlen($content),
+                    'Content-Length' => $fileSize,
                     'Host' => $host,
                     'X-Amz-Content-SHA256' => $contentHash,
                     'X-Amz-Date' => $date,
                     'Authorization' => $authorization
                 ],
-                'body' => $content
+                'body' => $stream
             ]);
+
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            $statusCode = $response->getStatusCode();
+            if ($statusCode < 200 || $statusCode >= 300) {
+                throw new Exception(sprintf(
+                    // translators: %1$s: Status code, %2$s: Reason phrase
+                    esc_html__('S3 upload failed with status: %1$s %2$s', 'storage-for-woo-via-s3-compatible'),
+                    $statusCode,
+                    $response->getReasonPhrase()
+                ));
+            }
 
             return [
                 'name' => basename($path),
                 'path_display' => '/' . $path,
-                'size' => strlen($content)
+                'size' => $fileSize
             ];
         } catch (Exception $e) {
+            if (isset($stream) && is_resource($stream)) {
+                fclose($stream);
+            }
             $this->config->debug('Upload error: ' . $e->getMessage());
             return false;
         }

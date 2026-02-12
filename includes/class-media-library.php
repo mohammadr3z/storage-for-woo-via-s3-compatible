@@ -19,64 +19,59 @@ class WCS3_Media_Library
         $this->config = new WCS3_S3_Config();
         $this->client = new WCS3_S3_Client();
 
-        // Media library integration
-        add_action('media_upload_wcs3_lib', array($this, 'registerLibraryTab'));
-        add_action('admin_head', array($this, 'setupAdminJS'));
-
         // Enqueue styles
         add_action('admin_enqueue_scripts', array($this, 'enqueueStyles'));
 
-        // Add S3 button to WooCommerce downloadable files
+        // Add S3 button to WooCommerce downloadable files (Server-Side)
+        // We use a different hook/logic for Woo than EDD, but the JS handles the button insertion primarily.
+        // Keeping addS3ButtonScript for localization.
         add_action('admin_footer', array($this, 'addS3ButtonScript'));
+
+        // AJAX Handler for fetching library
+        add_action('wp_ajax_wcs3_get_library', array($this, 'ajaxGetLibrary'));
     }
 
-
-
     /**
-     * Register S3 Library tab
+     * AJAX Handler to get library content
      */
-    public function registerLibraryTab()
+    public function ajaxGetLibrary()
     {
+        // Verify nonce without dying, handle manually
+        if (!isset($_REQUEST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])), 'media-form')) {
+            wp_send_json_error(esc_html__('Security check failed.', 'storage-for-woo-via-s3-compatible'));
+        }
+
         $mediaCapability = apply_filters('wcs3_media_access_cap', 'edit_products');
         if (!current_user_can($mediaCapability)) {
-            wp_die(esc_html__('You do not have permission to access S3 library.', 'storage-for-woo-via-s3-compatible'));
+            wp_send_json_error(esc_html__('You do not have permission to access S3 library.', 'storage-for-woo-via-s3-compatible'));
         }
 
-        // Check nonce for GET requests with parameters
-        if (!empty($_GET) && (isset($_GET['path']) || isset($_GET['_wpnonce']))) {
-            if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'media-form')) {
-                wp_die(esc_html__('Security check failed.', 'storage-for-woo-via-s3-compatible'));
-            }
+        $path = isset($_REQUEST['path']) ? sanitize_text_field(wp_unslash($_REQUEST['path'])) : '';
+
+        // Prevent directory traversal
+        if (strpos($path, '..') !== false) {
+            wp_send_json_error(esc_html__('Invalid path.', 'storage-for-woo-via-s3-compatible'));
         }
 
-        if (!empty($_POST)) {
-            if (!isset($_POST['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce'])), 'media-form')) {
-                wp_die(esc_html__('Security check failed.', 'storage-for-woo-via-s3-compatible'));
-            }
-
-            $error = media_upload_form_handler();
-            if (is_string($error)) {
-                return $error;
-            }
+        if (empty($path)) {
+            $path = '';
         }
-        wp_iframe(array($this, 'renderLibraryTab'));
+
+        ob_start();
+        $this->renderLibraryContent($path);
+        $html = ob_get_clean();
+
+        wp_send_json_success(array('html' => $html));
     }
 
     /**
-     * Render S3 Library tab content
+     * Render the inner content of the library
+     * 
+     * @param string $path
      */
-    public function renderLibraryTab()
+    private function renderLibraryContent($path)
     {
-        wp_enqueue_style('media');
-        wp_enqueue_style('wcs3-media-library');
-        wp_enqueue_style('wcs3-media-container');
-        wp_enqueue_style('wcs3-upload');
-        wp_enqueue_script('wcs3-media-library');
-        wp_enqueue_script('wcs3-upload');
-
-        $path = $this->getPath();
-
-        // Check if S3 is connected
+        // Check if bucket is configured before trying to list files
         if (!$this->config->isConfigured()) {
 ?>
             <div id="media-items" class="wcs3-media-container">
@@ -96,23 +91,25 @@ class WCS3_Media_Library
             return;
         }
 
-        // Try to get files
+        // Try to get files with error handling
         try {
             $files = $this->client->listFiles($path);
             $connection_error = false;
         } catch (Exception $e) {
-            $files = [];
+            $files = array();
             $connection_error = true;
             $this->config->debug('S3 connection error: ' . $e->getMessage());
         }
+
         ?>
 
         <?php
-        // Calculate back URL for header if in subfolder
+        // Calculate back URL if in subfolder (mostly for keeping consistent structure, managed by JS now)
         $back_url = '';
         if (!empty($path)) {
             $parent_path = dirname($path);
             $parent_path = ($parent_path === '/' || $parent_path === '.') ? '' : $parent_path;
+
             $back_url = remove_query_arg(array('wcs3_success', 'wcs3_filename', 'error'));
             $back_url = add_query_arg(array(
                 'path' => $parent_path,
@@ -120,282 +117,207 @@ class WCS3_Media_Library
             ), $back_url);
         }
         ?>
-        <div style="width: inherit;" id="media-items">
-            <div class="wcs3-header-row">
-                <h3 class="media-title"><?php esc_html_e('Select a file from S3', 'storage-for-woo-via-s3-compatible'); ?></h3>
-                <div class="wcs3-header-buttons">
-                    <button type="button" class="button button-primary" id="wcs3-toggle-upload">
-                        <?php esc_html_e('Upload File', 'storage-for-woo-via-s3-compatible'); ?>
-                    </button>
-                </div>
+        <div class="wcs3-header-row">
+            <h3 class="media-title"><?php esc_html_e('Select a file from S3', 'storage-for-woo-via-s3-compatible'); ?></h3>
+            <div class="wcs3-header-buttons">
+                <button type="button" class="button button-primary" id="wcs3-toggle-upload">
+                    <?php esc_html_e('Upload File', 'storage-for-woo-via-s3-compatible'); ?>
+                </button>
             </div>
+        </div>
 
-            <?php if ($connection_error) { ?>
-                <div class="wcs3-notice warning">
-                    <h4><?php esc_html_e('Connection Error', 'storage-for-woo-via-s3-compatible'); ?></h4>
-                    <p><?php esc_html_e('Unable to connect to S3.', 'storage-for-woo-via-s3-compatible'); ?></p>
-                    <p><?php esc_html_e('Please check your S3 configuration settings and try again.', 'storage-for-woo-via-s3-compatible'); ?></p>
-                    <p>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=wc-settings&tab=wcs3_s3')); ?>" class="button-primary">
-                            <?php esc_html_e('Check Settings', 'storage-for-woo-via-s3-compatible'); ?>
+        <?php if ($connection_error) { ?>
+            <div class="wcs3-notice warning">
+                <h4><?php esc_html_e('Connection Error', 'storage-for-woo-via-s3-compatible'); ?></h4>
+                <p><?php esc_html_e('Unable to connect to S3.', 'storage-for-woo-via-s3-compatible'); ?></p>
+                <p><?php esc_html_e('Please check your S3 configuration settings and try again.', 'storage-for-woo-via-s3-compatible'); ?></p>
+                <p>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=wc-settings&tab=wcs3_s3')); ?>" class="button-primary">
+                        <?php esc_html_e('Check Settings', 'storage-for-woo-via-s3-compatible'); ?>
+                    </a>
+                </p>
+            </div>
+        <?php } elseif (!$connection_error) { ?>
+
+            <div class="wcs3-breadcrumb-nav">
+                <div class="wcs3-nav-group">
+                    <?php if (!empty($back_url)) { ?>
+                        <a href="<?php echo esc_url($back_url); ?>" class="wcs3-nav-back" title="<?php esc_attr_e('Go Back', 'storage-for-woo-via-s3-compatible'); ?>" data-path="<?php echo esc_attr($parent_path); ?>">
+                            <span class="dashicons dashicons-arrow-left-alt2"></span>
                         </a>
-                    </p>
-                </div>
-            <?php } elseif (!$connection_error) { ?>
+                    <?php } else { ?>
+                        <span class="wcs3-nav-back disabled">
+                            <span class="dashicons dashicons-arrow-left-alt2"></span>
+                        </span>
+                    <?php } ?>
 
-                <div class="wcs3-breadcrumb-nav">
-                    <div class="wcs3-nav-group">
-                        <?php if (!empty($back_url)) { ?>
-                            <a href="<?php echo esc_url($back_url); ?>" class="wcs3-nav-back" title="<?php esc_attr_e('Go Back', 'storage-for-woo-via-s3-compatible'); ?>">
-                                <span class="dashicons dashicons-arrow-left-alt2"></span>
-                            </a>
-                        <?php } else { ?>
-                            <span class="wcs3-nav-back disabled">
-                                <span class="dashicons dashicons-arrow-left-alt2"></span>
-                            </span>
-                        <?php } ?>
+                    <div class="wcs3-breadcrumbs">
+                        <?php
+                        $bucket_name = $this->config->getBucket();
 
-                        <div class="wcs3-breadcrumbs">
-                            <?php
-                            $bucket_name = $this->config->getBucket();
+                        if (!empty($path)) {
+                            // Build breadcrumb navigation
+                            $path_parts = explode('/', trim($path, '/'));
+                            $breadcrumb_path = '';
+                            $breadcrumb_links = array();
 
-                            if (!empty($path)) {
-                                // Build breadcrumb navigation
-                                $path_parts = explode('/', trim($path, '/'));
-                                $breadcrumb_path = '';
-                                $breadcrumb_links = array();
+                            // Root link
+                            $root_url = remove_query_arg(array('path', 'wcs3_success', 'wcs3_filename', 'error'));
+                            $root_url = add_query_arg(array('_wpnonce' => wp_create_nonce('media-form')), $root_url);
+                            $breadcrumb_links[] = '<a href="' . esc_url($root_url) . '" data-path="">' . esc_html($bucket_name) . '</a>';
 
-                                // Root link
-                                $root_url = remove_query_arg(array('path', 'wcs3_success', 'wcs3_filename', 'error'));
-                                $root_url = add_query_arg(array('_wpnonce' => wp_create_nonce('media-form')), $root_url);
-                                $breadcrumb_links[] = '<a href="' . esc_url($root_url) . '">' . esc_html($bucket_name) . '</a>';
-
-                                // Build path links
-                                foreach ($path_parts as $index => $part) {
+                            // Build path links
+                            foreach ($path_parts as $index => $part) {
+                                if (!empty($breadcrumb_path)) {
                                     $breadcrumb_path .= '/' . $part;
-                                    if ($index === count($path_parts) - 1) {
-                                        $breadcrumb_links[] = '<span class="current">' . esc_html($part) . '</span>';
-                                    } else {
-                                        $folder_url = remove_query_arg(array('wcs3_success', 'wcs3_filename', 'error'));
-                                        $folder_url = add_query_arg(array(
-                                            'path' => $breadcrumb_path,
-                                            '_wpnonce' => wp_create_nonce('media-form')
-                                        ), $folder_url);
-                                        $breadcrumb_links[] = '<a href="' . esc_url($folder_url) . '">' . esc_html($part) . '</a>';
-                                    }
+                                } else {
+                                    $breadcrumb_path = $part;
                                 }
 
-                                echo wp_kses(implode(' <span class="sep">/</span> ', $breadcrumb_links), array(
-                                    'a' => array('href' => array()),
-                                    'span' => array('class' => array())
-                                ));
-                            } else {
-                                echo '<span class="current">' . esc_html($bucket_name) . '</span>';
+                                if ($index === count($path_parts) - 1) {
+                                    // Current folder - not a link
+                                    $breadcrumb_links[] = '<span class="current">' . esc_html($part) . '</span>';
+                                } else {
+                                    // Parent folder - make it a link
+                                    $folder_url = remove_query_arg(array('wcs3_success', 'wcs3_filename', 'error'));
+                                    $folder_url = add_query_arg(array(
+                                        'path' => $breadcrumb_path,
+                                        '_wpnonce' => wp_create_nonce('media-form')
+                                    ), $folder_url);
+                                    $breadcrumb_links[] = '<a href="' . esc_url($folder_url) . '" data-path="' . esc_attr($breadcrumb_path) . '">' . esc_html($part) . '</a>';
+                                }
                             }
-                            ?>
-                        </div>
-                    </div>
 
-                    <!-- Search Input -->
-                    <?php if (!empty($files)) { ?>
-                        <div class="wcs3-search-inline">
-                            <input type="search"
-                                id="wcs3-file-search"
-                                class="wcs3-search-input"
-                                placeholder="<?php esc_attr_e('Search files...', 'storage-for-woo-via-s3-compatible'); ?>">
-                        </div>
-                    <?php } ?>
-                </div>
-
-
-
-                <?php
-                // Upload form integrated into Library
-                $successFlag = filter_input(INPUT_GET, 'wcs3_success', FILTER_SANITIZE_NUMBER_INT);
-                $errorMsg = filter_input(INPUT_GET, 'error', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-                if ($errorMsg) {
-                    $this->config->debug('Upload error: ' . $errorMsg);
-                ?>
-                    <div class="wcs3-notice warning">
-                        <h4><?php esc_html_e('Error', 'storage-for-woo-via-s3-compatible'); ?></h4>
-                        <p><?php esc_html_e('An error occurred during the upload process. Please try again.', 'storage-for-woo-via-s3-compatible'); ?></p>
-                    </div>
-                <?php
-                }
-
-                if (!empty($successFlag) && '1' == $successFlag) {
-                    $savedPathAndFilename = filter_input(INPUT_GET, 'wcs3_filename', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-                    $savedPathAndFilename = sanitize_text_field($savedPathAndFilename);
-                    $lastSlashPos = strrpos($savedPathAndFilename, '/');
-                    $savedFilename = $lastSlashPos !== false ? substr($savedPathAndFilename, $lastSlashPos + 1) : $savedPathAndFilename;
-                ?>
-                    <div class="wcs3-notice success">
-                        <h4><?php esc_html_e('Upload Successful', 'storage-for-woo-via-s3-compatible'); ?></h4>
-                        <p>
-                            <?php
-                            /* translators: %s: Uploaded file name */
-                            printf(esc_html__('File %s uploaded successfully!', 'storage-for-woo-via-s3-compatible'), '<strong>' . esc_html($savedFilename) . '</strong>');
-                            ?>
-                        </p>
-                        <p>
-                            <a href="javascript:void(0)"
-                                id="wcs3_save_link"
-                                class="button-primary"
-                                data-wcs3-fn="<?php echo esc_attr($savedFilename); ?>"
-                                data-wcs3-path="<?php echo esc_attr(ltrim($savedPathAndFilename, '/')); ?>">
-                                <?php esc_html_e('Use this file in your Download', 'storage-for-woo-via-s3-compatible'); ?>
-                            </a>
-                        </p>
-                    </div>
-                <?php
-                }
-                ?>
-                <!-- Upload Form (Hidden by default) -->
-                <form enctype="multipart/form-data" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="wcs3-upload-form" id="wcs3-upload-section" style="display: none;">
-                    <?php wp_nonce_field('wcs3_upload', 'wcs3_nonce'); ?>
-                    <input type="hidden" name="action" value="wcs3_upload" />
-                    <div class="upload-field">
-                        <input type="file"
-                            name="wcs3_file"
-                            accept=".zip,.rar,.7z,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" />
-                    </div>
-                    <p class="description">
-                        <?php
-                        /* translators: %s: Maximum file size allowed */
-                        printf(esc_html__('Maximum upload file size: %s', 'storage-for-woo-via-s3-compatible'), esc_html(size_format(wp_max_upload_size())));
+                            echo wp_kses(implode(' <span class="sep">/</span> ', $breadcrumb_links), array(
+                                'a' => array('href' => array(), 'data-path' => array()),
+                                'span' => array('class' => array())
+                            ));
+                        } else {
+                            echo '<span class="current">' . esc_html($bucket_name) . '</span>';
+                        }
                         ?>
-                    </p>
-                    <input type="submit"
-                        class="button-primary"
-                        value="<?php esc_attr_e('Upload', 'storage-for-woo-via-s3-compatible'); ?>" />
-                    <input type="hidden" name="wcs3_path" value="<?php echo esc_attr($path); ?>" />
-                </form>
+                    </div>
+                </div>
 
                 <?php if (is_array($files) && !empty($files)) { ?>
+                    <div class="wcs3-search-inline">
+                        <input type="search"
+                            id="wcs3-file-search"
+                            class="wcs3-search-input"
+                            placeholder="<?php esc_attr_e('Search files...', 'storage-for-woo-via-s3-compatible'); ?>">
+                    </div>
+                <?php } ?>
+            </div>
 
+            <?php
+            // Upload result handling managed by JS now, but keeping DOM structure for compatibility/notices
+            ?>
 
-                    <!-- File Display Table -->
-                    <table class="wp-list-table widefat fixed wcs3-files-table">
-                        <thead>
-                            <tr>
-                                <th class="column-primary" style="width: 40%;"><?php esc_html_e('File Name', 'storage-for-woo-via-s3-compatible'); ?></th>
-                                <th class="column-size" style="width: 20%;"><?php esc_html_e('File Size', 'storage-for-woo-via-s3-compatible'); ?></th>
-                                <th class="column-date" style="width: 25%;"><?php esc_html_e('Last Modified', 'storage-for-woo-via-s3-compatible'); ?></th>
-                                <th class="column-actions" style="width: 15%;"><?php esc_html_e('Actions', 'storage-for-woo-via-s3-compatible'); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            // Sort: folders first, then files
-                            usort($files, function ($a, $b) {
-                                if ($a['is_folder'] && !$b['is_folder']) return -1;
-                                if (!$a['is_folder'] && $b['is_folder']) return 1;
-                                return strcasecmp($a['name'], $b['name']);
-                            });
+            <!-- Upload Form (Hidden by default) -->
+            <form enctype="multipart/form-data" method="post" action="#" class="wcs3-upload-form" id="wcs3-upload-section" style="display: none;">
+                <?php wp_nonce_field('wcs3_upload', 'wcs3_nonce'); ?>
+                <input type="hidden" name="action" value="wcs3_upload" />
+                <div class="upload-field">
+                    <input type="file"
+                        name="wcs3_file"
+                        accept=".zip,.rar,.7z,.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif" />
+                </div>
+                <p class="description">
+                    <?php
+                    /* translators: %s: Maximum file size allowed */
+                    printf(esc_html__('Maximum upload file size: %s', 'storage-for-woo-via-s3-compatible'), esc_html(size_format(wp_max_upload_size())));
+                    ?>
+                </p>
+                <input type="submit"
+                    class="button-primary"
+                    value="<?php esc_attr_e('Upload', 'storage-for-woo-via-s3-compatible'); ?>" />
+                <input type="hidden" name="wcs3_path" value="<?php echo esc_attr($path); ?>" />
+            </form>
 
-                            foreach ($files as $file) {
-                                // Handle folders
-                                if ($file['is_folder']) {
-                                    $folder_url = add_query_arg(array(
-                                        'path' => $file['path'],
-                                        '_wpnonce' => wp_create_nonce('media-form')
-                                    ));
-                            ?>
-                                    <tr class="wcs3-folder-row">
-                                        <td class="column-primary" data-label="<?php esc_attr_e('Folder Name', 'storage-for-woo-via-s3-compatible'); ?>">
-                                            <a href="<?php echo esc_url($folder_url); ?>" class="folder-link">
-                                                <span class="dashicons dashicons-category"></span>
-                                                <span class="file-name"><?php echo esc_html($file['name']); ?></span>
-                                            </a>
-                                        </td>
-                                        <td class="column-size">—</td>
-                                        <td class="column-date">—</td>
-                                        <td class="column-actions">
-                                            <a href="<?php echo esc_url($folder_url); ?>" class="button-secondary button-small">
-                                                <?php esc_html_e('Open', 'storage-for-woo-via-s3-compatible'); ?>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php
-                                    continue;
-                                }
+            <?php if (is_array($files) && !empty($files)) { ?>
 
-                                // Handle files
-                                $file_size = $this->formatFileSize($file['size']);
-                                $last_modified = !empty($file['modified']) ? $this->formatHumanDate($file['modified']) : '—';
-                                ?>
-                                <tr>
-                                    <td class="column-primary" data-label="<?php esc_attr_e('File Name', 'storage-for-woo-via-s3-compatible'); ?>">
-                                        <div class="wcs3-file-display">
+                <!-- File Display Table -->
+                <table class="wp-list-table widefat fixed wcs3-files-table">
+                    <thead>
+                        <tr>
+                            <th class="column-primary" style="width: 40%;"><?php esc_html_e('File Name', 'storage-for-woo-via-s3-compatible'); ?></th>
+                            <th class="column-size" style="width: 20%;"><?php esc_html_e('File Size', 'storage-for-woo-via-s3-compatible'); ?></th>
+                            <th class="column-date" style="width: 25%;"><?php esc_html_e('Last Modified', 'storage-for-woo-via-s3-compatible'); ?></th>
+                            <th class="column-actions" style="width: 15%;"><?php esc_html_e('Actions', 'storage-for-woo-via-s3-compatible'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        // Sort: folders first, then files
+                        usort($files, function ($a, $b) {
+                            if ($a['is_folder'] && !$b['is_folder']) return -1;
+                            if (!$a['is_folder'] && $b['is_folder']) return 1;
+                            return strcasecmp($a['name'], $b['name']);
+                        });
+
+                        foreach ($files as $file) {
+                            // Handle folders
+                            if ($file['is_folder']) {
+                                $folder_url = add_query_arg(array(
+                                    'path' => $file['path'],
+                                    '_wpnonce' => wp_create_nonce('media-form')
+                                ));
+                        ?>
+                                <tr class="wcs3-folder-row">
+                                    <td class="column-primary" data-label="<?php esc_attr_e('Folder Name', 'storage-for-woo-via-s3-compatible'); ?>">
+                                        <a href="<?php echo esc_url($folder_url); ?>" class="folder-link" data-path="<?php echo esc_attr($file['path']); ?>">
+                                            <span class="dashicons dashicons-category"></span>
                                             <span class="file-name"><?php echo esc_html($file['name']); ?></span>
-                                        </div>
+                                        </a>
                                     </td>
-                                    <td class="column-size" data-label="<?php esc_attr_e('File Size', 'storage-for-woo-via-s3-compatible'); ?>">
-                                        <span class="file-size"><?php echo esc_html($file_size); ?></span>
-                                    </td>
-                                    <td class="column-date" data-label="<?php esc_attr_e('Last Modified', 'storage-for-woo-via-s3-compatible'); ?>">
-                                        <span class="file-date"><?php echo esc_html($last_modified); ?></span>
-                                    </td>
-                                    <td class="column-actions" data-label="<?php esc_attr_e('Actions', 'storage-for-woo-via-s3-compatible'); ?>">
-                                        <?php
-                                        $file_path = ltrim($file['path'], '/');
-                                        $full_uri = $this->config->getUrlPrefix() . $file_path;
-                                        ?>
-                                        <a class="save-wcs3-file button-secondary button-small"
-                                            href="javascript:void(0)"
-                                            data-wcs3-filename="<?php echo esc_attr($file['name']); ?>"
-                                            data-wcs3-link="<?php echo esc_attr($full_uri); ?>">
-                                            <?php esc_html_e('Select File', 'storage-for-woo-via-s3-compatible'); ?>
+                                    <td class="column-size">—</td>
+                                    <td class="column-date">—</td>
+                                    <td class="column-actions">
+                                        <a href="<?php echo esc_url($folder_url); ?>" class="button-secondary button-small folder-link" data-path="<?php echo esc_attr($file['path']); ?>">
+                                            <?php esc_html_e('Open', 'storage-for-woo-via-s3-compatible'); ?>
                                         </a>
                                     </td>
                                 </tr>
-                            <?php } ?>
-                        </tbody>
-                    </table>
-                <?php } else { ?>
-                    <div class="wcs3-notice info" style="margin-top: 15px;">
-                        <p><?php esc_html_e('This folder is empty. Use the upload form above to add files.', 'storage-for-woo-via-s3-compatible'); ?></p>
-                    </div>
-                <?php } ?>
+                            <?php
+                                continue;
+                            }
+
+                            // Handle files
+                            $file_size = $this->formatFileSize($file['size']);
+                            $last_modified = !empty($file['modified']) ? $this->formatHumanDate($file['modified']) : '—';
+                            ?>
+                            <tr>
+                                <td class="column-primary" data-label="<?php esc_attr_e('File Name', 'storage-for-woo-via-s3-compatible'); ?>">
+                                    <div class="wcs3-file-display">
+                                        <span class="file-name"><?php echo esc_html($file['name']); ?></span>
+                                    </div>
+                                </td>
+                                <td class="column-size" data-label="<?php esc_attr_e('File Size', 'storage-for-woo-via-s3-compatible'); ?>">
+                                    <span class="file-size"><?php echo esc_html($file_size); ?></span>
+                                </td>
+                                <td class="column-date" data-label="<?php esc_attr_e('Last Modified', 'storage-for-woo-via-s3-compatible'); ?>">
+                                    <span class="file-date"><?php echo esc_html($last_modified); ?></span>
+                                </td>
+                                <td class="column-actions" data-label="<?php esc_attr_e('Actions', 'storage-for-woo-via-s3-compatible'); ?>">
+                                    <a class="save-wcs3-file button-secondary button-small"
+                                        href="javascript:void(0)"
+                                        data-wcs3-filename="<?php echo esc_attr($file['name']); ?>"
+                                        data-wcs3-link="<?php echo esc_attr(ltrim($file['path'], '/')); ?>">
+                                        <?php esc_html_e('Select File', 'storage-for-woo-via-s3-compatible'); ?>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            <?php } else { ?>
+                <div class="wcs3-notice info" style="margin-top: 15px;">
+                    <p><?php esc_html_e('This folder is empty. Use the upload form above to add files.', 'storage-for-woo-via-s3-compatible'); ?></p>
+                </div>
             <?php } ?>
+        <?php } ?>
         </div>
 <?php
-    }
-
-
-    /**
-     * Setup admin JavaScript
-     */
-    public function setupAdminJS()
-    {
-        wp_enqueue_script('wcs3-admin-upload-buttons');
-    }
-
-    /**
-     * Get current path from GET param
-     */
-    private function getPath()
-    {
-        $mediaCapability = apply_filters('wcs3_media_access_cap', 'edit_products');
-        if (!current_user_can($mediaCapability)) {
-            return '';
-        }
-
-        if (!empty($_GET['path'])) {
-            if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])), 'media-form')) {
-                wp_die(esc_html__('Security check failed.', 'storage-for-woo-via-s3-compatible'));
-            }
-        }
-
-        $path = !empty($_GET['path']) ? trim(sanitize_text_field(wp_unslash($_GET['path']))) : '';
-
-        // Prevent directory traversal
-        if (strpos($path, '..') !== false) {
-            return '';
-        }
-
-        return $path;
     }
 
     /**
@@ -445,7 +367,6 @@ class WCS3_Media_Library
         // Register scripts
         wp_register_script('wcs3-media-library', WCS3_PLUGIN_URL . 'assets/js/s3-media-library.js', array('jquery'), WCS3_VERSION, true);
         wp_register_script('wcs3-upload', WCS3_PLUGIN_URL . 'assets/js/s3-upload.js', array('jquery'), WCS3_VERSION, true);
-        wp_register_script('wcs3-admin-upload-buttons', WCS3_PLUGIN_URL . 'assets/js/admin-upload-buttons.js', array('jquery'), WCS3_VERSION, true);
         wp_register_script('wcs3-modal', WCS3_PLUGIN_URL . 'assets/js/s3-modal.js', array('jquery'), WCS3_VERSION, true);
         wp_register_script('wcs3-browse-button', WCS3_PLUGIN_URL . 'assets/js/s3-browse-button.js', array('jquery', 'wcs3-modal'), WCS3_VERSION, true);
 
@@ -463,12 +384,10 @@ class WCS3_Media_Library
 
         wp_add_inline_script('wcs3-upload', 'var wcs3_url_prefix = "' . esc_js($this->config->getUrlPrefix()) . '";', 'before');
         wp_add_inline_script('wcs3-upload', 'var wcs3_max_upload_size = ' . wp_json_encode(wp_max_upload_size()) . ';', 'before');
-
-        wp_add_inline_script('wcs3-admin-upload-buttons', 'var wcs3_url_prefix = "' . esc_js($this->config->getUrlPrefix()) . '";', 'before');
     }
 
     /**
-     * Add S3 button script to WooCommerce product pages
+     * Add S3 button script and styles to WooCommerce product pages
      */
     public function addS3ButtonScript()
     {
@@ -488,16 +407,28 @@ class WCS3_Media_Library
         wp_enqueue_style('wcs3-modal');
         wp_enqueue_script('wcs3-modal');
 
+        // Enqueue media library assets (AJAX)
+        wp_enqueue_style('wcs3-media-library');
+        wp_enqueue_script('wcs3-media-library');
+        wp_enqueue_style('wcs3-upload');
+        wp_enqueue_script('wcs3-upload');
+
         // Enqueue browse button assets
         wp_enqueue_style('wcs3-browse-button');
         wp_enqueue_script('wcs3-browse-button');
 
         // Localize script with dynamic data
-        $s3_url = admin_url('media-upload.php?type=wcs3_lib&tab=wcs3_lib');
         wp_localize_script('wcs3-browse-button', 'wcs3_browse_button', array(
-            'modal_url'   => $s3_url,
-            'modal_title' => __('S3 Library', 'storage-for-woo-via-s3-compatible'),
-            'nonce'       => wp_create_nonce('media-form')
+            'modal_title'        => __('S3 Library', 'storage-for-woo-via-s3-compatible'),
+            'nonce'              => wp_create_nonce('media-form'),
+            'url_prefix'         => $this->config->getUrlPrefix(),
+            'i18n_select_file'   => __('Select a file from S3', 'storage-for-woo-via-s3-compatible'),
+            'i18n_upload'        => __('Upload File', 'storage-for-woo-via-s3-compatible'),
+            'i18n_file_name'     => __('File Name', 'storage-for-woo-via-s3-compatible'),
+            'i18n_file_size'     => __('File Size', 'storage-for-woo-via-s3-compatible'),
+            'i18n_last_modified' => __('Last Modified', 'storage-for-woo-via-s3-compatible'),
+            'i18n_actions'       => __('Actions', 'storage-for-woo-via-s3-compatible'),
+            'i18n_search'        => __('Search files...', 'storage-for-woo-via-s3-compatible')
         ));
 
         wp_add_inline_script('wcs3-browse-button', 'var wcs3_url_prefix = "' . esc_js($this->config->getUrlPrefix()) . '";', 'before');

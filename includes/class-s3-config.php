@@ -17,6 +17,7 @@ class WCS3_S3_Config
     const KEY_REGION = 'wcs3_region';
     const KEY_ENDPOINT = 'wcs3_endpoint';
     const KEY_BUCKET = 'wcs3_bucket';
+    const KEY_LINK_EXPIRATION_TIME = 'wcs3_link_expiration_time';
 
     // URL prefix for S3 file URLs in WooCommerce
     const URL_PREFIX = 'wc-s3cs://';
@@ -188,7 +189,7 @@ class WCS3_S3_Config
      */
     public function getLinkExpirationTime()
     {
-        $minutes = (int) get_option('wcs3_link_expiration_time', 5);
+        $minutes = (int) get_option(self::KEY_LINK_EXPIRATION_TIME, 5);
         if ($minutes < 1) {
             $minutes = 5;
         }

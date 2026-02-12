@@ -1,9 +1,9 @@
 /**
- * Admin Settings Styles for Dropbox WooCommerce Integration
+ * Admin Settings Styles for S3-Compatible WooCommerce Integration
  */
 
 /* Connected status indicator - Green */
-.wcdbx-connected-status {
+.wcs3-connected-status {
     color: #00a32a;
     font-weight: 600;
     display: inline-flex;
@@ -16,7 +16,7 @@
 }
 
 /* Warning status indicator - Yellow/Orange */
-.wcdbx-warning-status {
+.wcs3-warning-status {
     color: #856404;
     font-weight: 600;
     display: inline-flex;
@@ -29,16 +29,18 @@
 }
 
 /* Notice styling */
-.wcdbx-notice {
+.wcs3-notice {
+    display: inline-block;
     padding: 10px 15px;
     background: #fff3cd;
     border-left: 4px solid #ffc107;
     margin: 10px 0;
     border-radius: 0 4px 4px 0;
+    white-space: nowrap;
 }
 
 /* Permission warning message */
-.wcdbx-permission-warning {
+.wcs3-permission-warning {
     display: inline-block;
     padding: 8px 12px;
     background: #fff3cd;
@@ -50,47 +52,58 @@
 }
 
 /* RTL Support */
-.rtl .wcdbx-connected-status,
-.rtl .wcdbx-warning-status,
-.rtl .wcdbx-notice,
-.rtl .wcdbx-permission-warning {
+.rtl .wcs3-connected-status,
+.rtl .wcs3-warning-status,
+.rtl .wcs3-notice,
+.rtl .wcs3-permission-warning {
     border-left: none;
     border-right: 4px solid;
     border-radius: 4px 0 0 4px;
 }
 
-.rtl .wcdbx-connected-status {
+.rtl .wcs3-connected-status {
     border-right-color: #00a32a;
 }
 
-.rtl .wcdbx-warning-status,
-.rtl .wcdbx-permission-warning {
+.rtl .wcs3-warning-status,
+.rtl .wcs3-permission-warning {
     border-right-color: #f0ad4e;
 }
 
-.rtl .wcdbx-notice {
+.rtl .wcs3-notice {
     border-right-color: #ffc107;
 }
 
 /* Disabled input styling */
-.wcdbx-disabled {
+.wcs3-disabled {
     opacity: 0.6;
     pointer-events: none;
 }
 
 /* Credential input fields */
-.wcdbx-credential {
+.wcs3-credential {
     font-family: monospace;
 }
 
+/* Bucket disabled state */
+.wcs3-bucket-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.wcs3-bucket-disabled select {
+    background-color: #f1f1f1 !important;
+    cursor: not-allowed !important;
+}
+
 /* OAuth buttons */
-.wcdbx-oauth-button {
+.wcs3-oauth-button {
     display: inline-flex;
     align-items: center;
     gap: 8px;
 }
 
-.wcdbx-oauth-button .dashicons {
+.wcs3-oauth-button .dashicons {
     font-size: 18px;
     width: 18px;
     height: 18px;

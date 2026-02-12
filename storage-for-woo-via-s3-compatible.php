@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Storage for Woo via S3-Compatible
  * Description: Enable secure cloud storage and delivery of your digital products through S3-Compatible services for WooCommerce.
- * Version: 1.0.5
+ * Version: 1.1.0
  * Author: mohammadr3z
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -28,7 +28,7 @@ if (!defined('WCS3_PLUGIN_URL')) {
     define('WCS3_PLUGIN_URL', plugin_dir_url(__FILE__));
 }
 if (!defined('WCS3_VERSION')) {
-    define('WCS3_VERSION', '1.0.5');
+    define('WCS3_VERSION', '1.1.0');
 }
 
 // Load plugin classes
